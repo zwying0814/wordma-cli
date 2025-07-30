@@ -1,5 +1,10 @@
 name: Development Build
 
+# 开发工作流只需要读取权限
+permissions:
+  contents: read
+  pull-requests: read
+
 on:
   push:
     branches: [ dev ]

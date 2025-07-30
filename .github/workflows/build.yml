@@ -1,5 +1,11 @@
 name: Build and Release
 
+# 添加必要的权限
+permissions:
+  contents: write
+  packages: write
+  pull-requests: read
+
 on:
   push:
     branches: [ main ]
