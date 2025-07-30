@@ -1,0 +1,94 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ main, dev ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux, windows, darwin]
+        goarch: [amd64, arm64]
+        exclude:
+          # Windows on ARM64 is not commonly used
+          - goos: windows
+            goarch: arm64
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22'
+
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Download dependencies
+      run: go mod download
+
+    - name: Run tests
+      run: go test -v ./...
+
+    - name: Build binary
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
+      run: |
+        # Set binary name with extension for Windows
+        BINARY_NAME=wordma
+        if [ "$GOOS" = "windows" ]; then
+          BINARY_NAME="${BINARY_NAME}.exe"
+        fi
+        
+        # Create output directory
+        mkdir -p dist
+        
+        # Build binary
+        go build -ldflags="-s -w" -o "dist/${BINARY_NAME}-${GOOS}-${GOARCH}${BINARY_NAME##*wordma}" .
+        
+        # Create archive
+        cd dist
+        if [ "$GOOS" = "windows" ]; then
+          zip "wordma-${GOOS}-${GOARCH}.zip" "${BINARY_NAME}-${GOOS}-${GOARCH}.exe"
+        else
+          tar -czf "wordma-${GOOS}-${GOARCH}.tar.gz" "${BINARY_NAME}-${GOOS}-${GOARCH}"
+        fi
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: wordma-${{ matrix.goos }}-${{ matrix.goarch }}
+        path: dist/wordma-${{ matrix.goos }}-${{ matrix.goarch }}.*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: artifacts
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: artifacts/**/*
+        generate_release_notes: true
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

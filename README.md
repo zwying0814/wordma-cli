@@ -2,6 +2,37 @@
 
 Wordma CLI 是一个用于管理 wordma 静态博客项目的脚手架工具。
 
+[![Build Status](https://github.com/your-username/wordma-cli/workflows/Build%20and%20Release/badge.svg)](https://github.com/your-username/wordma-cli/actions)
+[![Go Report Card](https://goreportcard.com/badge/github.com/your-username/wordma-cli)](https://goreportcard.com/report/github.com/your-username/wordma-cli)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+## 安装
+
+### 从 GitHub Releases 下载
+
+访问 [Releases 页面](https://github.com/your-username/wordma-cli/releases) 下载适合你操作系统的预编译二进制文件。
+
+### 从源码构建
+
+```bash
+git clone https://github.com/your-username/wordma-cli.git
+cd wordma-cli
+go build -o wordma.exe
+```
+
+### 使用构建脚本
+
+**Linux/macOS:**
+```bash
+chmod +x scripts/build.sh
+./scripts/build.sh
+```
+
+**Windows:**
+```cmd
+scripts\build.bat
+```
+
 ## 命令
 
 ### 1. wordma doctor
@@ -90,6 +121,49 @@ wordma add theme https://github.com/user/awesome-theme.git
    wordma build theme-name
    ```
 
+## 开发
+
+### 本地开发
+
+```bash
+# 克隆仓库
+git clone https://github.com/your-username/wordma-cli.git
+cd wordma-cli
+
+# 安装依赖
+go mod download
+
+# 运行测试
+go test ./...
+
+# 构建
+go build -o wordma .
+```
+
+### CI/CD
+
+项目使用 GitHub Actions 进行持续集成和部署：
+
+- **开发分支 (dev)**: 每次推送时运行测试和代码质量检查
+- **主分支 (main)**: 每次推送时构建多平台二进制文件
+- **标签 (v*)**: 自动创建 GitHub Release 并上传构建产物
+
+### 发布新版本
+
+1. 确保所有更改都已合并到 `main` 分支
+2. 创建并推送新的版本标签：
+   ```bash
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+3. GitHub Actions 将自动构建并发布新版本
+
+## 支持的平台
+
+- Linux (amd64, arm64)
+- macOS (amd64, arm64)
+- Windows (amd64)
+
 ## 系统要求
 
 - Node.js
@@ -97,3 +171,11 @@ wordma add theme https://github.com/user/awesome-theme.git
 - Git
 
 使用 `wordma doctor` 命令检查这些依赖是否已正确安装。
+
+## 许可证
+
+MIT License - 详见 [LICENSE](LICENSE) 文件。
+
+## 贡献
+
+欢迎提交 Issue 和 Pull Request！
