@@ -74,6 +74,29 @@ func FileExists(path string) bool {
 	return !os.IsNotExist(err)
 }
 
+// IsDirEmpty 检查目录是否为空（忽略指定的文件）
+func IsDirEmpty(dir string, ignoreFiles ...string) (bool, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return false, err
+	}
+	
+	// 创建忽略文件的映射
+	ignoreMap := make(map[string]bool)
+	for _, file := range ignoreFiles {
+		ignoreMap[file] = true
+	}
+	
+	// 检查是否有非忽略的文件
+	for _, entry := range entries {
+		if !ignoreMap[entry.Name()] {
+			return false, nil
+		}
+	}
+	
+	return true, nil
+}
+
 // CreateDir 创建目录
 func CreateDir(path string) error {
 	return os.MkdirAll(path, 0755)

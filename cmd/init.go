@@ -10,15 +10,20 @@ import (
 )
 
 var initCmd = &cobra.Command{
-	Use:   "init <name>",
-	Short: "Initialize a new wordma project",
-	Long:  "Initialize a new wordma static blog project by cloning the template repository",
-	Args:  cobra.ExactArgs(1),
+	Use:   "init",
+	Short: "Initialize a new wordma project in current directory",
+	Long:  "Initialize a new wordma static blog project in the current directory by cloning the template repository",
+	Args:  cobra.NoArgs,
 	Run:   runInit,
 }
 
 func runInit(cmd *cobra.Command, args []string) {
-	projectName := args[0]
+	// 获取当前工作目录
+	currentDir, err := os.Getwd()
+	if err != nil {
+		utils.PrintError(fmt.Sprintf("Failed to get current directory: %v", err))
+		os.Exit(1)
+	}
 	
 	// 检查必要的依赖
 	if !utils.CheckCommand("git") {
@@ -27,40 +32,55 @@ func runInit(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	// 确定项目路径
-	var projectPath string
-	if filepath.IsAbs(projectName) {
-		projectPath = projectName
-	} else {
-		wd, err := os.Getwd()
-		if err != nil {
-			utils.PrintError(fmt.Sprintf("Failed to get current directory: %v", err))
-			os.Exit(1)
-		}
-		projectPath = filepath.Join(wd, projectName)
+	// 获取当前目录名作为项目名
+	projectName := filepath.Base(currentDir)
+	
+	// 检查当前目录是否为空（忽略可能存在的wordma可执行文件）
+	isEmpty, err := utils.IsDirEmpty(currentDir, "wordma", "wordma.exe")
+	if err != nil {
+		utils.PrintError(fmt.Sprintf("Failed to check directory: %v", err))
+		os.Exit(1)
 	}
-
-	// 检查目录是否已存在
-	if utils.FileExists(projectPath) {
-		utils.PrintError(fmt.Sprintf("Directory '%s' already exists", projectPath))
+	
+	if !isEmpty {
+		utils.PrintError("Current directory is not empty")
+		utils.PrintInfo("Please run 'wordma init' in an empty directory")
 		os.Exit(1)
 	}
 
-	utils.PrintInfo(fmt.Sprintf("Initializing wordma project in '%s'...", projectPath))
+	utils.PrintInfo(fmt.Sprintf("Initializing wordma project '%s' in current directory...", projectName))
 
-	// 第一步：克隆远程仓库
+	// 第一步：克隆远程仓库到临时目录，然后移动内容
 	utils.PrintInfo("Cloning wordma template repository...")
 	repoURL := "https://github.com/zwying0814/wordma.git"
+	tempDir := filepath.Join(os.TempDir(), "wordma-temp")
 	
-	err := utils.RunCommand("git", "clone", "-b", "main", repoURL, projectPath)
+	// 清理可能存在的临时目录
+	if utils.FileExists(tempDir) {
+		os.RemoveAll(tempDir)
+	}
+	
+	err = utils.RunCommand("git", "clone", "-b", "main", repoURL, tempDir)
 	if err != nil {
 		utils.PrintError(fmt.Sprintf("Failed to clone repository: %v", err))
 		os.Exit(1)
 	}
 	utils.PrintSuccess("Repository cloned successfully")
 
-	// 第二步：初始化 .deploy 目录为 git 项目
-	deployPath := filepath.Join(projectPath, ".deploy")
+	// 第二步：移动文件到当前目录
+	utils.PrintInfo("Moving files to current directory...")
+	err = moveDirectoryContents(tempDir, currentDir)
+	if err != nil {
+		utils.PrintError(fmt.Sprintf("Failed to move files: %v", err))
+		os.Exit(1)
+	}
+	
+	// 清理临时目录
+	os.RemoveAll(tempDir)
+	utils.PrintSuccess("Files moved successfully")
+
+	// 第三步：初始化 .deploy 目录为 git 项目
+	deployPath := filepath.Join(currentDir, ".deploy")
 	utils.PrintInfo("Initializing .deploy directory as git repository...")
 	
 	err = utils.CreateDir(deployPath)
@@ -77,7 +97,7 @@ func runInit(cmd *cobra.Command, args []string) {
 	utils.PrintSuccess(".deploy directory initialized as git repository")
 
 	// 删除原始的 .git 目录（可选）
-	originalGitPath := filepath.Join(projectPath, ".git")
+	originalGitPath := filepath.Join(currentDir, ".git")
 	if utils.FileExists(originalGitPath) {
 		err = os.RemoveAll(originalGitPath)
 		if err != nil {
@@ -88,9 +108,28 @@ func runInit(cmd *cobra.Command, args []string) {
 	}
 
 	fmt.Println()
-	utils.PrintSuccess(fmt.Sprintf("Wordma project '%s' initialized successfully!", filepath.Base(projectPath)))
+	utils.PrintSuccess(fmt.Sprintf("Wordma project '%s' initialized successfully!", projectName))
 	utils.PrintInfo("Next steps:")
-	fmt.Printf("  1. cd %s\n", projectPath)
-	fmt.Printf("  2. wordma install\n")
-	fmt.Printf("  3. wordma dev <theme-name>\n")
+	fmt.Printf("  1. wordma install\n")
+	fmt.Printf("  2. wordma dev <theme-name>\n")
+}
+
+// moveDirectoryContents 移动目录内容
+func moveDirectoryContents(src, dst string) error {
+	entries, err := os.ReadDir(src)
+	if err != nil {
+		return err
+	}
+	
+	for _, entry := range entries {
+		srcPath := filepath.Join(src, entry.Name())
+		dstPath := filepath.Join(dst, entry.Name())
+		
+		err = os.Rename(srcPath, dstPath)
+		if err != nil {
+			return err
+		}
+	}
+	
+	return nil
 }
