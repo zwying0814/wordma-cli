@@ -44,8 +44,8 @@ func runBuild(cmd *cobra.Command, args []string) {
 		
 		themesDir := filepath.Join(projectRoot, "themes")
 		if utils.FileExists(themesDir) {
-			entries, err := os.ReadDir(themesDir)
-			if err == nil {
+			entries, readErr := os.ReadDir(themesDir)
+			if readErr == nil {
 				for _, entry := range entries {
 					if entry.IsDir() {
 						fmt.Printf("  - %s\n", entry.Name())

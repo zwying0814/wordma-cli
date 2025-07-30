@@ -109,18 +109,18 @@ func isValidGitURL(gitURL string) bool {
 		_, err := url.Parse(gitURL)
 		return err == nil
 	}
-	
+
 	// 检查 SSH URL (git@...)
 	if strings.HasPrefix(gitURL, "git@") {
 		return strings.Contains(gitURL, ":")
 	}
-	
+
 	// 检查其他 git:// 协议
 	if strings.HasPrefix(gitURL, "git://") {
 		_, err := url.Parse(gitURL)
 		return err == nil
 	}
-	
+
 	return false
 }
 
@@ -142,9 +142,7 @@ func extractThemeNameFromURL(gitURL string) string {
 	if len(parts) > 0 {
 		name := parts[len(parts)-1]
 		// 移除 .git 后缀
-		if strings.HasSuffix(name, ".git") {
-			name = strings.TrimSuffix(name, ".git")
-		}
+		name = strings.TrimSuffix(name, ".git")
 		return name
 	}
 
