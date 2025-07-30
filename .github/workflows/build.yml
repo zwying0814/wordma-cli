@@ -23,12 +23,12 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
         go-version: '1.22'
 
     - name: Cache Go modules
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
@@ -46,6 +46,11 @@ jobs:
         GOOS: ${{ matrix.goos }}
         GOARCH: ${{ matrix.goarch }}
       run: |
+        # Get version info
+        VERSION=${GITHUB_REF_NAME:-dev}
+        BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        GIT_COMMIT=${GITHUB_SHA::7}
+        
         # Set binary name with extension for Windows
         BINARY_NAME=wordma
         if [ "$GOOS" = "windows" ]; then
@@ -55,8 +60,9 @@ jobs:
         # Create output directory
         mkdir -p dist
         
-        # Build binary
-        go build -ldflags="-s -w" -o "dist/${BINARY_NAME}-${GOOS}-${GOARCH}${BINARY_NAME##*wordma}" .
+        # Build binary with version info
+        LDFLAGS="-s -w -X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME} -X main.GitCommit=${GIT_COMMIT}"
+        go build -ldflags="${LDFLAGS}" -o "dist/${BINARY_NAME}-${GOOS}-${GOARCH}${BINARY_NAME##*wordma}" .
         
         # Create archive
         cd dist
@@ -67,10 +73,11 @@ jobs:
         fi
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: wordma-${{ matrix.goos }}-${{ matrix.goarch }}
         path: dist/wordma-${{ matrix.goos }}-${{ matrix.goarch }}.*
+        retention-days: 30
 
   release:
     needs: build
@@ -79,14 +86,15 @@ jobs:
     
     steps:
     - name: Download all artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         path: artifacts
+        merge-multiple: true
 
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
-        files: artifacts/**/*
+        files: artifacts/*
         generate_release_notes: true
         draft: false
         prerelease: false
