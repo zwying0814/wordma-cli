@@ -31,23 +31,50 @@ for %%p in (%platforms%) do (
         set GOOS=%%a
         set GOARCH=%%b
         
-        set output_name=wordma-!GOOS!-!GOARCH!
-        if "!GOOS!"=="windows" set output_name=!output_name!.exe
+        REM 设置临时文件名和最终文件名
+        set temp_name=temp-wordma-!GOOS!-!GOARCH!
+        set final_name=wordma
+        set archive_name=wordma-!GOOS!-!GOARCH!
+        
+        if "!GOOS!"=="windows" (
+            set temp_name=!temp_name!.exe
+            set final_name=!final_name!.exe
+            set archive_name=!archive_name!.zip
+        ) else (
+            set archive_name=!archive_name!.tar.gz
+        )
         
         echo Building for !GOOS!/!GOARCH!...
         
         set GOOS=!GOOS!
         set GOARCH=!GOARCH!
-        go build -ldflags="!LDFLAGS!" -o "dist\!output_name!" .
+        go build -ldflags="!LDFLAGS!" -o "dist\!temp_name!" .
         
         if errorlevel 1 (
             echo Failed to build for !GOOS!/!GOARCH!
             exit /b 1
         )
+        
+        REM 创建压缩包
+        pushd dist
+        if "!GOOS!"=="windows" (
+            REM 重命名并创建zip
+            ren "!temp_name!" "!final_name!"
+            powershell -command "Compress-Archive -Path '!final_name!' -DestinationPath '!archive_name!' -Force"
+            del "!final_name!"
+        ) else (
+            REM 重命名并创建tar.gz (需要tar命令或使用PowerShell)
+            ren "!temp_name!" "!final_name!"
+            powershell -command "tar -czf '!archive_name!' '!final_name!'"
+            del "!final_name!"
+        )
+        popd
+        
+        echo Created !archive_name!
     )
 )
 
 echo.
 echo Build completed successfully!
-echo Binaries are available in the dist\ directory:
-dir dist\
+echo Archives are available in the dist\ directory:
+dir dist\*.zip dist\*.tar.gz 2>nul

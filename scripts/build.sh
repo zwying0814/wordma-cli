@@ -32,25 +32,50 @@ platforms=(
 for platform in "${platforms[@]}"; do
     IFS='/' read -r GOOS GOARCH <<< "$platform"
     
-    output_name="wordma-${GOOS}-${GOARCH}"
+    # 设置临时文件名和最终文件名
+    temp_name="temp-wordma-${GOOS}-${GOARCH}"
+    final_name="wordma"
+    archive_name="wordma-${GOOS}-${GOARCH}"
+    
     if [ "$GOOS" = "windows" ]; then
-        output_name="${output_name}.exe"
+        temp_name="${temp_name}.exe"
+        final_name="${final_name}.exe"
+        archive_name="${archive_name}.zip"
+    else
+        archive_name="${archive_name}.tar.gz"
     fi
     
     echo "Building for ${GOOS}/${GOARCH}..."
     
     env GOOS="$GOOS" GOARCH="$GOARCH" go build \
         -ldflags="$LDFLAGS" \
-        -o "dist/${output_name}" \
+        -o "dist/${temp_name}" \
         .
     
     if [ $? -ne 0 ]; then
         echo "Failed to build for ${GOOS}/${GOARCH}"
         exit 1
     fi
+    
+    # 创建压缩包
+    cd dist
+    if [ "$GOOS" = "windows" ]; then
+        # 重命名并创建zip
+        mv "$temp_name" "$final_name"
+        zip "$archive_name" "$final_name"
+        rm "$final_name"
+    else
+        # 重命名并创建tar.gz
+        mv "$temp_name" "$final_name"
+        tar -czf "$archive_name" "$final_name"
+        rm "$final_name"
+    fi
+    cd ..
+    
+    echo "Created $archive_name"
 done
 
 echo ""
 echo "Build completed successfully!"
-echo "Binaries are available in the dist/ directory:"
-ls -la dist/
+echo "Archives are available in the dist/ directory:"
+ls -la dist/*.zip dist/*.tar.gz 2>/dev/null || true
