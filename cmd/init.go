@@ -114,7 +114,7 @@ func runInit(cmd *cobra.Command, args []string) {
 	fmt.Printf("  2. wordma dev <theme-name>\n")
 }
 
-// moveDirectoryContents 移动目录内容
+// moveDirectoryContents 移动目录内容（支持跨驱动器）
 func moveDirectoryContents(src, dst string) error {
 	entries, err := os.ReadDir(src)
 	if err != nil {
@@ -125,7 +125,73 @@ func moveDirectoryContents(src, dst string) error {
 		srcPath := filepath.Join(src, entry.Name())
 		dstPath := filepath.Join(dst, entry.Name())
 		
-		err = os.Rename(srcPath, dstPath)
+		if entry.IsDir() {
+			// 递归处理目录
+			err = copyDirectory(srcPath, dstPath)
+		} else {
+			// 复制文件
+			err = copyFile(srcPath, dstPath)
+		}
+		
+		if err != nil {
+			return err
+		}
+	}
+	
+	return nil
+}
+
+// copyFile 复制文件
+func copyFile(src, dst string) error {
+	sourceFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer sourceFile.Close()
+	
+	destFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+	
+	_, err = destFile.ReadFrom(sourceFile)
+	if err != nil {
+		return err
+	}
+	
+	// 复制文件权限
+	sourceInfo, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	
+	return os.Chmod(dst, sourceInfo.Mode())
+}
+
+// copyDirectory 递归复制目录
+func copyDirectory(src, dst string) error {
+	// 创建目标目录
+	err := os.MkdirAll(dst, 0755)
+	if err != nil {
+		return err
+	}
+	
+	entries, err := os.ReadDir(src)
+	if err != nil {
+		return err
+	}
+	
+	for _, entry := range entries {
+		srcPath := filepath.Join(src, entry.Name())
+		dstPath := filepath.Join(dst, entry.Name())
+		
+		if entry.IsDir() {
+			err = copyDirectory(srcPath, dstPath)
+		} else {
+			err = copyFile(srcPath, dstPath)
+		}
+		
 		if err != nil {
 			return err
 		}

@@ -68,6 +68,11 @@ func RunCommandInDir(dir, name string, args ...string) error {
 	return cmd.Run()
 }
 
+// NewCommand 创建一个新的命令，用于获取输出
+func NewCommand(name string, args ...string) *exec.Cmd {
+	return exec.Command(name, args...)
+}
+
 // FileExists 检查文件是否存在
 func FileExists(path string) bool {
 	_, err := os.Stat(path)

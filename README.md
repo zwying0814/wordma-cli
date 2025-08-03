@@ -88,6 +88,19 @@ wordma build my-theme
 wordma add theme https://github.com/user/awesome-theme.git
 ```
 
+### 7. wordma update theme <name>
+更新指定主题到最新版本。
+
+```bash
+wordma update theme my-theme
+```
+
+这个命令会：
+- 检查主题是否存在且为 git 仓库
+- 自动 stash 本地未提交的更改（如果有）
+- 从远程仓库拉取最新代码
+- 提供恢复本地更改的指导
+
 ## 使用流程
 
 1. 检查系统依赖：
@@ -111,12 +124,17 @@ wordma add theme https://github.com/user/awesome-theme.git
    wordma add theme https://github.com/user/theme.git
    ```
 
-5. 启动开发服务器：
+5. 更新主题（可选）：
+   ```bash
+   wordma update theme theme-name
+   ```
+
+6. 启动开发服务器：
    ```bash
    wordma dev theme-name
    ```
 
-6. 构建生产版本：
+7. 构建生产版本：
    ```bash
    wordma build theme-name
    ```
