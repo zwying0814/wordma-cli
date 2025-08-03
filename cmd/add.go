@@ -85,17 +85,6 @@ func runAddTheme(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	// 删除主题的 .git 目录（可选）
-	themeGitPath := filepath.Join(themePath, ".git")
-	if utils.FileExists(themeGitPath) {
-		err = os.RemoveAll(themeGitPath)
-		if err != nil {
-			utils.PrintWarning(fmt.Sprintf("Failed to remove theme .git directory: %v", err))
-		} else {
-			utils.PrintInfo("Removed theme .git directory")
-		}
-	}
-
 	utils.PrintSuccess(fmt.Sprintf("Theme '%s' added successfully!", themeName))
 	utils.PrintInfo("Next steps:")
 	fmt.Printf("  1. wordma install (if not already done)\n")
