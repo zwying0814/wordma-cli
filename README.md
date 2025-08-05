@@ -42,12 +42,11 @@ scripts\build.bat
 wordma doctor
 ```
 
-### 2. wordma init <name>
-初始化一个新的 wordma 静态博客项目。
+### 2. wordma init
+在当前目录初始化一个新的 wordma 静态博客项目。
 
 ```bash
-wordma init my-blog
-wordma init /path/to/my-blog
+wordma init
 ```
 
 这个命令会：
@@ -88,7 +87,7 @@ wordma build my-theme
 wordma add theme https://github.com/user/awesome-theme.git
 ```
 
-### 7. wordma update theme <name>
+### 7. wordma update theme <n>
 更新指定主题到最新版本。
 
 ```bash
@@ -97,9 +96,21 @@ wordma update theme my-theme
 
 这个命令会：
 - 检查主题是否存在且为 git 仓库
-- 自动 stash 本地未提交的更改（如果有）
+- **自动备份配置文件**（config 目录）
+- **智能处理本地更改**：
+  - 配置文件更改：保留在工作区，不会被 stash
+  - 非配置文件更改：自动 stash 以避免冲突
+  - 混合更改：只 stash 非配置文件，保护配置文件
 - 从远程仓库拉取最新代码
-- 提供恢复本地更改的指导
+- **智能处理配置文件冲突**：
+  - 如果配置文件无变化，自动恢复原配置
+  - 如果有变化，提供三个选项：
+    1. 保留当前配置（推荐）
+    2. 使用新的默认配置
+    3. 保留备份供手动合并
+- 提供恢复非配置更改的指导
+
+**配置保护机制**确保你的自定义配置永远不会在更新时丢失。
 
 ## 使用流程
 
