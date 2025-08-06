@@ -72,5 +72,35 @@ func runBuild(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
+	// 重命名 .deploy/.temp 文件夹为主题名称
+	deployDir := filepath.Join(projectRoot, ".deploy")
+	tempDir := filepath.Join(deployDir, ".temp")
+	targetDir := filepath.Join(deployDir, themeName)
+
+	// 检查 .temp 目录是否存在
+	if utils.FileExists(tempDir) {
+		utils.PrintInfo("Renaming build output directory...")
+		
+		// 如果目标目录已存在，先删除
+		if utils.FileExists(targetDir) {
+			err = os.RemoveAll(targetDir)
+			if err != nil {
+				utils.PrintError(fmt.Sprintf("Failed to remove existing directory '%s': %v", targetDir, err))
+				os.Exit(1)
+			}
+		}
+		
+		// 重命名 .temp 为主题名称
+		err = os.Rename(tempDir, targetDir)
+		if err != nil {
+			utils.PrintError(fmt.Sprintf("Failed to rename build directory: %v", err))
+			os.Exit(1)
+		}
+		
+		utils.PrintSuccess(fmt.Sprintf("Build output moved to '.deploy/%s'", themeName))
+	} else {
+		utils.PrintWarning("No .temp directory found in .deploy folder")
+	}
+
 	utils.PrintSuccess(fmt.Sprintf("Theme '%s' built successfully!", themeName))
 }

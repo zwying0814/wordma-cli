@@ -50,8 +50,12 @@ wordma init
 ```
 
 这个命令会：
-- 从 `https://github.com/zwying0814/wordma.git` 克隆 main 分支到指定目录
+- 从 `https://github.com/zwying0814/wordma.git` 克隆 main 分支到当前目录
 - 初始化 `.deploy` 目录为 git 仓库
+- **自动创建部署配置文件**：
+  - 在 `.deploy` 目录中创建 `README.md` 文件，说明部署目录的用途
+  - 创建 `.gitignore` 文件，忽略 `.temp` 文件夹和常见的缓存文件
+- 清理原始的 `.git` 目录，避免与模板仓库的关联
 
 ### 3. wordma install / wordma i
 安装项目的所有依赖。
@@ -78,7 +82,11 @@ wordma dev my-theme
 wordma build my-theme
 ```
 
-等价于在 `themes/my-theme` 目录下执行 `pnpm run build`。
+这个命令会：
+- 在 `themes/my-theme` 目录下执行 `pnpm run build`
+- **自动重命名构建输出**：将 `.deploy/.temp` 文件夹重命名为主题名称（如 `.deploy/my-theme`）
+- 如果目标目录已存在，会先删除旧版本再重命名
+- 提供清晰的构建状态反馈
 
 ### 6. wordma add theme <git-url>
 从指定的 git 仓库添加主题到 themes 目录。
