@@ -229,3 +229,136 @@ func CopyFile(src, dst string) error {
 	_, err = io.Copy(dstFile, srcFile)
 	return err
 }
+
+// CreateDeployReadme 创建 .deploy 目录的 README.md 文件
+func CreateDeployReadme(deployPath, projectName string) error {
+	readmeContent := fmt.Sprintf(`# %s - Deploy Directory
+
+This directory contains the built static files for the %s wordma blog.
+
+## About
+
+This directory is automatically managed by the wordma CLI tool:
+- Built files from themes are placed here
+- Each theme build creates a subdirectory named after the theme
+- This directory is initialized as a git repository for deployment purposes
+
+## Usage
+
+- Run ` + "`wordma build <theme-name>`" + ` to build a theme
+- The built files will be placed in ` + "`./`" + `<theme-name>/` + "`" + ` subdirectory
+- You can deploy these files to any static hosting service
+
+## Deployment
+
+You can deploy the contents of this directory to:
+- GitHub Pages
+- Netlify
+- Vercel
+- Any static hosting service
+
+## Note
+
+Do not manually edit files in this directory as they will be overwritten on the next build.
+`, projectName, projectName)
+
+	readmePath := filepath.Join(deployPath, "README.md")
+	return os.WriteFile(readmePath, []byte(readmeContent), 0644)
+}
+
+// CreateDeployGitignore 创建 .deploy 目录的 .gitignore 文件
+func CreateDeployGitignore(deployPath string) error {
+	gitignoreContent := `# Temporary build directory
+.temp/
+
+# Node.js dependencies and cache
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build cache and temporary files
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+dist/
+build/
+out/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env.test
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+# Temporary folders
+tmp/
+temp/
+`
+
+	gitignorePath := filepath.Join(deployPath, ".gitignore")
+	return os.WriteFile(gitignorePath, []byte(gitignoreContent), 0644)
+}

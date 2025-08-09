@@ -120,6 +120,27 @@ wordma update theme my-theme
 
 **配置保护机制**确保你的自定义配置永远不会在更新时丢失。
 
+### 8. wordma deploy init
+初始化或重新创建 `.deploy` 目录。
+
+```bash
+wordma deploy init
+```
+
+这个命令用于解决意外删除 `.deploy` 文件夹的问题，会：
+- 检查项目根目录（必须包含 `package.json`）
+- 如果 `.deploy` 目录已存在，提示用户确认是否删除并重新初始化
+- 创建新的 `.deploy` 目录
+- 初始化为 Git 仓库
+- 创建 `README.md` 文件，说明部署目录的用途
+- 创建 `.gitignore` 文件，忽略 `.temp` 文件夹和常见的缓存文件
+- 提供后续部署操作的指引
+
+**使用场景**：
+- 意外删除了 `.deploy` 文件夹
+- 需要重新初始化部署环境
+- 部署目录配置损坏需要重置
+
 ## 使用流程
 
 1. 检查系统依赖：
@@ -156,6 +177,11 @@ wordma update theme my-theme
 7. 构建生产版本：
    ```bash
    wordma build theme-name
+   ```
+
+8. 如果意外删除了 `.deploy` 文件夹，可以重新初始化：
+   ```bash
+   wordma deploy init
    ```
 
 ## 开发
