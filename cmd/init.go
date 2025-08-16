@@ -79,54 +79,14 @@ func runInit(cmd *cobra.Command, args []string) {
 	os.RemoveAll(tempDir)
 	utils.PrintSuccess("Files moved successfully")
 
-	// 第三步：初始化 .deploy 目录为 git 项目
-	deployPath := filepath.Join(currentDir, ".deploy")
-	utils.PrintInfo("Initializing .deploy directory as git repository...")
-	
-	err = utils.CreateDir(deployPath)
-	if err != nil {
-		utils.PrintError(fmt.Sprintf("Failed to create .deploy directory: %v", err))
-		os.Exit(1)
-	}
 
-	err = utils.RunCommandInDir(deployPath, "git", "init")
-	if err != nil {
-		utils.PrintError(fmt.Sprintf("Failed to initialize .deploy git repository: %v", err))
-		os.Exit(1)
-	}
-
-	// 创建 README.md 文件
-	err = utils.CreateDeployReadme(deployPath, projectName)
-	if err != nil {
-		utils.PrintError(fmt.Sprintf("Failed to create README.md: %v", err))
-		os.Exit(1)
-	}
-
-	// 创建 .gitignore 文件
-	err = utils.CreateDeployGitignore(deployPath)
-	if err != nil {
-		utils.PrintError(fmt.Sprintf("Failed to create .gitignore: %v", err))
-		os.Exit(1)
-	}
-
-	utils.PrintSuccess(".deploy directory initialized as git repository")
-
-	// 删除原始的 .git 目录（可选）
-	originalGitPath := filepath.Join(currentDir, ".git")
-	if utils.FileExists(originalGitPath) {
-		err = os.RemoveAll(originalGitPath)
-		if err != nil {
-			utils.PrintWarning(fmt.Sprintf("Failed to remove original .git directory: %v", err))
-		} else {
-			utils.PrintInfo("Removed original .git directory")
-		}
-	}
 
 	fmt.Println()
 	utils.PrintSuccess(fmt.Sprintf("Wordma project '%s' initialized successfully!", projectName))
 	utils.PrintInfo("Next steps:")
 	fmt.Printf("  1. wordma install\n")
-	fmt.Printf("  2. wordma dev <theme-name>\n")
+	fmt.Printf("  2. wordma deploy init [git-url]  # Initialize deployment directory\n")
+	fmt.Printf("  3. wordma dev <theme-name>\n")
 }
 
 // moveDirectoryContents 移动目录内容（支持跨驱动器）

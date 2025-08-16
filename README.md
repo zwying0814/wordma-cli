@@ -51,11 +51,9 @@ wordma init
 
 这个命令会：
 - 从 `https://github.com/zwying0814/wordma.git` 克隆 main 分支到当前目录
-- 初始化 `.deploy` 目录为 git 仓库
-- **自动创建部署配置文件**：
-  - 在 `.deploy` 目录中创建 `README.md` 文件，说明部署目录的用途
-  - 创建 `.gitignore` 文件，忽略 `.temp` 文件夹和常见的缓存文件
-- 清理原始的 `.git` 目录，避免与模板仓库的关联
+- 保留 `.git` 目录，方便后续更新模板
+
+**注意**：此命令不再自动创建 `.deploy` 目录，请使用 `wordma deploy init` 来初始化部署目录。
 
 ### 3. wordma install / wordma i
 安装项目的所有依赖。
@@ -124,7 +122,11 @@ wordma update theme my-theme
 初始化或重新创建 `.deploy` 目录。
 
 ```bash
+# 基本用法
 wordma deploy init
+
+# 同时设置远程仓库
+wordma deploy init https://github.com/zwying0814/my-blog.git
 ```
 
 这个命令用于解决意外删除 `.deploy` 文件夹的问题，会：
@@ -132,14 +134,19 @@ wordma deploy init
 - 如果 `.deploy` 目录已存在，提示用户确认是否删除并重新初始化
 - 创建新的 `.deploy` 目录
 - 初始化为 Git 仓库
+- **可选：设置远程仓库**：如果提供了 Git URL，会自动添加为 origin 远程仓库
 - 创建 `README.md` 文件，说明部署目录的用途
 - 创建 `.gitignore` 文件，忽略 `.temp` 文件夹和常见的缓存文件
 - 提供后续部署操作的指引
+
+**参数说明**：
+- `[git-url]`（可选）：远程 Git 仓库的 URL，用于部署推送
 
 **使用场景**：
 - 意外删除了 `.deploy` 文件夹
 - 需要重新初始化部署环境
 - 部署目录配置损坏需要重置
+- 快速设置部署仓库关联
 
 ## 使用流程
 
@@ -159,29 +166,42 @@ wordma deploy init
    wordma install
    ```
 
-4. 添加主题（可选）：
+4. 初始化部署目录：
+   ```bash
+   # 基本初始化
+   wordma deploy init
+   
+   # 同时设置远程仓库（推荐）
+   wordma deploy init https://github.com/your-username/your-blog.git
+   ```
+
+5. 添加主题（可选）：
    ```bash
    wordma add theme https://github.com/user/theme.git
    ```
 
-5. 更新主题（可选）：
+6. 更新主题（可选）：
    ```bash
    wordma update theme theme-name
    ```
 
-6. 启动开发服务器：
+7. 启动开发服务器：
    ```bash
    wordma dev theme-name
    ```
 
-7. 构建生产版本：
+8. 构建生产版本：
    ```bash
    wordma build theme-name
    ```
 
-8. 如果意外删除了 `.deploy` 文件夹，可以重新初始化：
+9. 如果意外删除了 `.deploy` 文件夹，可以重新初始化：
    ```bash
+   # 基本重新初始化
    wordma deploy init
+   
+   # 同时设置远程仓库（推荐）
+   wordma deploy init https://github.com/your-username/your-blog.git
    ```
 
 ## 开发
