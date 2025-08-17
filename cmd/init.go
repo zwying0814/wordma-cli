@@ -85,7 +85,7 @@ func runInit(cmd *cobra.Command, args []string) {
 	utils.PrintSuccess(fmt.Sprintf("Wordma project '%s' initialized successfully!", projectName))
 	utils.PrintInfo("Next steps:")
 	fmt.Printf("  1. wordma install\n")
-	fmt.Printf("  2. wordma deploy init [git-url]  # Initialize deployment directory\n")
+	fmt.Printf("  2. wordma deploy init <git-url>  # Initialize deployment directory\n")
 	fmt.Printf("  3. wordma dev <theme-name>\n")
 }
 

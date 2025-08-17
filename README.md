@@ -119,24 +119,17 @@ wordma update theme my-theme
 **配置保护机制**确保你的自定义配置永远不会在更新时丢失。
 
 ### 8. wordma deploy init
-初始化或重新创建 `.deploy` 目录。
+初始化或重新创建 `.deploy` 目录，通过克隆指定的 Git 仓库。
 
 ```bash
-# 基本用法
-wordma deploy init
-
-# 同时设置远程仓库
+# 从指定仓库克隆到 .deploy 目录
 wordma deploy init https://github.com/zwying0814/my-blog.git
 ```
 
 这个命令用于解决意外删除 `.deploy` 文件夹的问题，会：
 - 检查项目根目录（必须包含 `package.json`）
 - 如果 `.deploy` 目录已存在，提示用户确认是否删除并重新初始化
-- 创建新的 `.deploy` 目录
-- 初始化为 Git 仓库
-- **可选：设置远程仓库**：如果提供了 Git URL，会自动添加为 origin 远程仓库
-- 创建 `README.md` 文件，说明部署目录的用途
-- 创建 `.gitignore` 文件，忽略 `.temp` 文件夹和常见的缓存文件
+- 使用 `git clone` 直接从指定的 Git 仓库克隆到 `.deploy` 目录
 - 提供后续部署操作的指引
 
 **参数说明**：
@@ -197,10 +190,7 @@ wordma deploy init https://github.com/zwying0814/my-blog.git
 
 9. 如果意外删除了 `.deploy` 文件夹，可以重新初始化：
    ```bash
-   # 基本重新初始化
-   wordma deploy init
-   
-   # 同时设置远程仓库（推荐）
+   # 从指定仓库重新初始化
    wordma deploy init https://github.com/your-username/your-blog.git
    ```
 

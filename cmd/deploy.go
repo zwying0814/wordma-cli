@@ -16,10 +16,10 @@ var deployCmd = &cobra.Command{
 }
 
 var deployInitCmd = &cobra.Command{
-	Use:   "init [git-url]",
+	Use:   "init <git-url>",
 	Short: "Initialize or recreate the .deploy directory",
-	Long:  "Initialize or recreate the .deploy directory as a git repository with proper configuration files. Optionally specify a git URL to set as remote origin.",
-	Args:  cobra.MaximumNArgs(1),
+	Long:  "Initialize or recreate the .deploy directory by cloning from the specified git repository.",
+	Args:  cobra.ExactArgs(1),
 	Run:   runDeployInit,
 }
 
@@ -47,6 +47,7 @@ func runDeployInit(cmd *cobra.Command, args []string) {
 	}
 
 	deployPath := filepath.Join(currentDir, ".deploy")
+	gitURL := args[0]
 
 	// 检查 .deploy 目录是否已存在
 	if utils.FileExists(deployPath) {
@@ -72,67 +73,22 @@ func runDeployInit(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	utils.PrintInfo("Initializing .deploy directory...")
+	utils.PrintInfo(fmt.Sprintf("Cloning repository from %s...", gitURL))
 
-	// 创建 .deploy 目录
-	err = utils.CreateDir(deployPath)
+	// 使用 git clone 直接克隆仓库到 .deploy 目录
+	err = utils.RunCommandInDir(currentDir, "git", "clone", gitURL, ".deploy")
 	if err != nil {
-		utils.PrintError(fmt.Sprintf("Failed to create .deploy directory: %v", err))
+		utils.PrintError(fmt.Sprintf("Failed to clone repository: %v", err))
 		os.Exit(1)
 	}
 
-	// 如果提供了 Git URL，设置远程仓库
-	if len(args) > 0 {
-		gitURL := args[0]
-		utils.PrintInfo(fmt.Sprintf("Adding remote origin: %s", gitURL))
-
-		err = utils.RunCommandInDir(deployPath, "git", "remote", "add", "origin", gitURL)
-		if err != nil {
-			utils.PrintError(fmt.Sprintf("Failed to add remote origin: %v", err))
-			os.Exit(1)
-		}
-
-		utils.PrintSuccess("Remote origin added successfully!")
-	} else {
-		// 初始化为 git 仓库
-		err = utils.RunCommandInDir(deployPath, "git", "init")
-		if err != nil {
-			utils.PrintError(fmt.Sprintf("Failed to initialize .deploy git repository: %v", err))
-			os.Exit(1)
-		}
-	}
-
-	// 获取项目名称（当前目录名）
-	projectName := filepath.Base(currentDir)
-
-	// 创建 README.md 文件
-	err = utils.CreateDeployReadme(deployPath, projectName)
-	if err != nil {
-		utils.PrintError(fmt.Sprintf("Failed to create README.md: %v", err))
-		os.Exit(1)
-	}
-
-	// 创建 .gitignore 文件
-	err = utils.CreateDeployGitignore(deployPath)
-	if err != nil {
-		utils.PrintError(fmt.Sprintf("Failed to create .gitignore: %v", err))
-		os.Exit(1)
-	}
-
-	utils.PrintSuccess(".deploy directory initialized successfully!")
+	utils.PrintSuccess("Repository cloned successfully!")
 	utils.PrintInfo("Next steps:")
 	fmt.Printf("  1. wordma build <theme-name>  # Build a theme\n")
 	fmt.Printf("  2. cd .deploy                 # Navigate to deploy directory\n")
 	fmt.Printf("  3. git add .                  # Stage files for deployment\n")
 	fmt.Printf("  4. git commit -m \"Deploy\"     # Commit changes\n")
-
-	if len(args) > 0 {
-		fmt.Printf("  5. git push -u origin main    # Push to remote repository (first time)\n")
-		fmt.Printf("     git push                   # Push to remote repository (subsequent times)\n")
-	} else {
-		fmt.Printf("  5. git remote add origin <url> # Add remote repository\n")
-		fmt.Printf("  6. git push -u origin main    # Push to remote repository\n")
-	}
+	fmt.Printf("  5. git push                   # Push to remote repository\n")
 }
 
 // isWordmaProject 检查当前目录是否是 wordma 项目
