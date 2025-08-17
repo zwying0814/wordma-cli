@@ -47,22 +47,22 @@ func runDeployInit(cmd *cobra.Command, args []string) {
 	}
 
 	deployPath := filepath.Join(currentDir, ".deploy")
-	
+
 	// 检查 .deploy 目录是否已存在
 	if utils.FileExists(deployPath) {
 		utils.PrintWarning(".deploy directory already exists")
 		utils.PrintInfo("Do you want to reinitialize it? This will remove all existing content.")
-		
+
 		// 简单的确认提示
 		fmt.Print("Continue? (y/N): ")
 		var response string
 		fmt.Scanln(&response)
-		
+
 		if response != "y" && response != "Y" && response != "yes" && response != "Yes" {
 			utils.PrintInfo("Operation cancelled")
 			return
 		}
-		
+
 		// 删除现有目录
 		utils.PrintInfo("Removing existing .deploy directory...")
 		err = os.RemoveAll(deployPath)
@@ -81,25 +81,25 @@ func runDeployInit(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	// 初始化为 git 仓库
-	err = utils.RunCommandInDir(deployPath, "git", "init")
-	if err != nil {
-		utils.PrintError(fmt.Sprintf("Failed to initialize .deploy git repository: %v", err))
-		os.Exit(1)
-	}
-
 	// 如果提供了 Git URL，设置远程仓库
 	if len(args) > 0 {
 		gitURL := args[0]
 		utils.PrintInfo(fmt.Sprintf("Adding remote origin: %s", gitURL))
-		
+
 		err = utils.RunCommandInDir(deployPath, "git", "remote", "add", "origin", gitURL)
 		if err != nil {
 			utils.PrintError(fmt.Sprintf("Failed to add remote origin: %v", err))
 			os.Exit(1)
 		}
-		
+
 		utils.PrintSuccess("Remote origin added successfully!")
+	} else {
+		// 初始化为 git 仓库
+		err = utils.RunCommandInDir(deployPath, "git", "init")
+		if err != nil {
+			utils.PrintError(fmt.Sprintf("Failed to initialize .deploy git repository: %v", err))
+			os.Exit(1)
+		}
 	}
 
 	// 获取项目名称（当前目录名）
@@ -125,7 +125,7 @@ func runDeployInit(cmd *cobra.Command, args []string) {
 	fmt.Printf("  2. cd .deploy                 # Navigate to deploy directory\n")
 	fmt.Printf("  3. git add .                  # Stage files for deployment\n")
 	fmt.Printf("  4. git commit -m \"Deploy\"     # Commit changes\n")
-	
+
 	if len(args) > 0 {
 		fmt.Printf("  5. git push -u origin main    # Push to remote repository (first time)\n")
 		fmt.Printf("     git push                   # Push to remote repository (subsequent times)\n")
@@ -142,13 +142,13 @@ func isWordmaProject(dir string) bool {
 	if utils.FileExists(themesDir) {
 		return true
 	}
-	
+
 	// 检查是否存在 package.json（可能是单主题项目）
 	packageJson := filepath.Join(dir, "package.json")
 	if utils.FileExists(packageJson) {
 		return true
 	}
-	
+
 	// 检查是否存在 wordma 相关的配置文件
 	configFiles := []string{"wordma.config.js", "wordma.config.json", ".wordmarc"}
 	for _, configFile := range configFiles {
@@ -156,11 +156,9 @@ func isWordmaProject(dir string) bool {
 			return true
 		}
 	}
-	
+
 	return false
 }
-
-
 
 func init() {
 	deployCmd.AddCommand(deployInitCmd)
