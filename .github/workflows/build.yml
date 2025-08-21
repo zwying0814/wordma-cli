@@ -57,8 +57,8 @@ jobs:
         BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
         GIT_COMMIT=${GITHUB_SHA::7}
         
-        # Set binary name with extension for Windows
-        BINARY_NAME=wordma
+        # Set binary name with platform info
+        BINARY_NAME=wordma-${GOOS}-${GOARCH}
         if [ "$GOOS" = "windows" ]; then
           BINARY_NAME="${BINARY_NAME}.exe"
         fi
@@ -66,33 +66,15 @@ jobs:
         # Create output directory
         mkdir -p dist
         
-        # Build binary with version info (临时文件名包含平台信息)
+        # Build binary with version info
         LDFLAGS="-s -w -X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME} -X main.GitCommit=${GIT_COMMIT}"
-        TEMP_BINARY="dist/temp-${BINARY_NAME}-${GOOS}-${GOARCH}"
-        if [ "$GOOS" = "windows" ]; then
-          TEMP_BINARY="${TEMP_BINARY}.exe"
-        fi
-        go build -ldflags="${LDFLAGS}" -o "${TEMP_BINARY}" .
-        
-        # Create archive with clean binary name
-        cd dist
-        if [ "$GOOS" = "windows" ]; then
-          # 重命名为简洁的文件名并压缩
-          mv "temp-${BINARY_NAME}-${GOOS}-${GOARCH}.exe" "${BINARY_NAME}"
-          zip "wordma-${GOOS}-${GOARCH}.zip" "${BINARY_NAME}"
-          rm "${BINARY_NAME}"  # 清理临时文件
-        else
-          # 重命名为简洁的文件名并压缩
-          mv "temp-${BINARY_NAME}-${GOOS}-${GOARCH}" "${BINARY_NAME}"
-          tar -czf "wordma-${GOOS}-${GOARCH}.tar.gz" "${BINARY_NAME}"
-          rm "${BINARY_NAME}"  # 清理临时文件
-        fi
+        go build -ldflags="${LDFLAGS}" -o "dist/${BINARY_NAME}" .
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
         name: wordma-${{ matrix.goos }}-${{ matrix.goarch }}
-        path: dist/wordma-${{ matrix.goos }}-${{ matrix.goarch }}.*
+        path: dist/wordma-${{ matrix.goos }}-${{ matrix.goarch }}*
         retention-days: 30
 
   release:
