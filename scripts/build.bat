@@ -5,12 +5,23 @@ REM Usage: scripts\build.bat [version]
 setlocal enabledelayedexpansion
 
 set VERSION=%1
-if "%VERSION%"=="" set VERSION=dev
+if "%VERSION%"=="" (
+    REM Try to get version from git tag
+    for /f "tokens=*" %%i in ('git describe --tags --exact-match HEAD 2^>nul') do set VERSION=%%i
+    if "!VERSION!"=="" (
+        for /f "tokens=*" %%i in ('git describe --tags --abbrev=0 2^>nul') do set GIT_TAG=%%i
+        if "!GIT_TAG!"=="" (
+            set VERSION=dev
+        ) else (
+            set VERSION=!GIT_TAG!-dev
+        )
+    )
+)
 
 for /f "tokens=*" %%i in ('git rev-parse --short HEAD 2^>nul') do set GIT_COMMIT=%%i
 if "%GIT_COMMIT%"=="" set GIT_COMMIT=unknown
 
-for /f "tokens=*" %%i in ('powershell -command "Get-Date -Format 'yyyy-MM-ddTHH:mm:ssZ' -AsUTC"') do set BUILD_TIME=%%i
+for /f "tokens=*" %%i in ('powershell -command "(Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')"') do set BUILD_TIME=%%i
 
 set LDFLAGS=-s -w -X main.Version=%VERSION% -X main.BuildTime=%BUILD_TIME% -X main.GitCommit=%GIT_COMMIT%
 

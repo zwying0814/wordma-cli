@@ -22,16 +22,26 @@ go build -o wordma.exe
 
 ### 使用构建脚本
 
-**Linux/macOS:**
+**本地开发构建:**
 ```bash
+# Windows
+.\build.bat
+
+# Linux/macOS
 chmod +x scripts/build.sh
 ./scripts/build.sh
 ```
 
-**Windows:**
-```cmd
-scripts\build.bat
+**发布构建（多平台）:**
+```bash
+# Windows
+.\scripts\build.bat [version]
+
+# Linux/macOS
+./scripts/build.sh [version]
 ```
+
+> 💡 **版本管理**: 构建脚本会自动从 Git Tag 获取版本号。如果当前 commit 有对应的 tag，则使用该 tag；否则使用最新 tag + `-dev` 后缀。详见 [VERSION.md](VERSION.md)。
 
 ## 命令
 
@@ -140,6 +150,47 @@ wordma deploy init https://github.com/zwying0814/my-blog.git
 - 需要重新初始化部署环境
 - 部署目录配置损坏需要重置
 - 快速设置部署仓库关联
+
+### 9. wordma version
+查看当前 CLI 工具的版本信息。
+
+```bash
+wordma version
+```
+
+这个命令会显示：
+- 当前版本号（从构建时注入）
+- 最新可用版本（从 GitHub API 获取）
+- 平台信息（操作系统/架构）
+- 构建时间和 Git Commit 信息
+- 更新提示和下载链接
+
+### 10. wordma update
+自动更新 CLI 工具到最新版本。
+
+```bash
+wordma update
+```
+
+这个命令会：
+- 检查当前版本和最新版本
+- 自动下载适合当前平台的最新版本
+- 替换当前可执行文件
+- 验证更新是否成功
+
+**注意**：
+- 开发版本（`dev` 或包含 `-dev` 后缀）不支持自动更新
+- 需要手动下载正式发布版本
+
+#### 更新主题
+
+```bash
+# 更新指定主题
+wordma update theme <theme-name>
+
+# 更新所有主题
+wordma update theme all
+```
 
 ## 使用流程
 

@@ -3,9 +3,13 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"wordma-cli/utils"
@@ -13,8 +17,15 @@ import (
 
 var updateCmd = &cobra.Command{
 	Use:   "update",
-	Short: "Update components of the project",
-	Long:  "Update various components like themes in the wordma project",
+	Short: "Update wordma CLI or project components",
+	Long:  "Update wordma CLI to the latest version or update project components like themes",
+	Run:   runSelfUpdate,
+}
+
+var updateThemesCmd = &cobra.Command{
+	Use:   "themes",
+	Short: "Update project themes",
+	Long:  "Update various themes in the wordma project",
 }
 
 var updateThemeCmd = &cobra.Command{
@@ -26,7 +37,226 @@ var updateThemeCmd = &cobra.Command{
 }
 
 func init() {
-	updateCmd.AddCommand(updateThemeCmd)
+	updateThemesCmd.AddCommand(updateThemeCmd)
+	updateCmd.AddCommand(updateThemesCmd)
+}
+
+// runSelfUpdate handles the self-update functionality
+func runSelfUpdate(cmd *cobra.Command, args []string) {
+	fmt.Printf("%s Checking for updates...\n", utils.ColorText("🔍", "blue"))
+
+	// Get version information
+	versionInfo, err := getVersionInfo()
+	if err != nil {
+		utils.PrintError(fmt.Sprintf("Failed to check for updates: %v", err))
+		os.Exit(1)
+	}
+
+	// Display current version info
+	fmt.Printf("%s Current version: %s\n", 
+		utils.ColorText("📦", "blue"), 
+		utils.ColorText(versionInfo.Current, "green"))
+	fmt.Printf("%s Latest version: %s\n", 
+		utils.ColorText("🚀", "blue"), 
+		utils.ColorText(versionInfo.Latest, "green"))
+
+	if !versionInfo.NeedsUpdate {
+		fmt.Printf("\n%s You are already using the latest version!\n", 
+			utils.ColorText("✅", "green"))
+		return
+	}
+
+	// Check if this is a development version
+	if versionInfo.Current == "dev" {
+		fmt.Printf("\n%s You are using a development version.\n", 
+			utils.ColorText("⚠️", "yellow"))
+		fmt.Printf("%s Auto-update is not available for development builds.\n", 
+			utils.ColorText("💡", "blue"))
+		fmt.Printf("%s Please download the latest release from: %s\n", 
+			utils.ColorText("🔗", "blue"),
+			utils.ColorText("https://github.com/zwying0814/wordma-cli/releases", "cyan"))
+		return
+	}
+
+	// Confirm update
+	fmt.Printf("\n%s A new version (%s) is available!\n", 
+		utils.ColorText("🎉", "yellow"), 
+		utils.ColorText(versionInfo.Latest, "yellow"))
+	fmt.Printf("%s Do you want to update? (y/N): ", 
+		utils.ColorText("❓", "blue"))
+
+	reader := bufio.NewReader(os.Stdin)
+	response, _ := reader.ReadString('\n')
+	response = strings.TrimSpace(strings.ToLower(response))
+
+	if response != "y" && response != "yes" {
+		fmt.Printf("%s Update cancelled.\n", utils.ColorText("❌", "red"))
+		return
+	}
+
+	// Perform update
+	if err := performSelfUpdate(versionInfo.Latest); err != nil {
+		utils.PrintError(fmt.Sprintf("Update failed: %v", err))
+		os.Exit(1)
+	}
+
+	fmt.Printf("\n%s Successfully updated to version %s!\n", 
+		utils.ColorText("🎉", "green"), 
+		utils.ColorText(versionInfo.Latest, "green"))
+	fmt.Printf("%s Please restart wordma to use the new version.\n", 
+		utils.ColorText("💡", "blue"))
+
+	// Show changelog if available
+	if versionInfo.Changelog != "" {
+		fmt.Printf("\n%s Release Notes:\n", utils.ColorText("📝", "blue"))
+		fmt.Printf("%s\n", versionInfo.Changelog)
+	}
+}
+
+// performSelfUpdate downloads and installs the latest version
+func performSelfUpdate(version string) error {
+	fmt.Printf("%s Downloading version %s...\n", 
+		utils.ColorText("⬇️", "blue"), version)
+
+	// Get current executable path
+	execPath, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("failed to get executable path: %w", err)
+	}
+
+	// Determine download URL based on platform
+	downloadURL := getDownloadURL(version)
+	if downloadURL == "" {
+		return fmt.Errorf("unsupported platform: %s/%s", runtime.GOOS, runtime.GOARCH)
+	}
+
+	// Download the new version
+	tempFile, err := downloadFile(downloadURL)
+	if err != nil {
+		return fmt.Errorf("failed to download update: %w", err)
+	}
+	defer os.Remove(tempFile)
+
+	fmt.Printf("%s Installing update...\n", utils.ColorText("🔧", "blue"))
+
+	// Backup current executable
+	backupPath := execPath + ".backup"
+	if err := copyFileForUpdate(execPath, backupPath); err != nil {
+		return fmt.Errorf("failed to backup current executable: %w", err)
+	}
+
+	// Replace executable
+	if err := replaceExecutable(tempFile, execPath); err != nil {
+		// Restore backup on failure
+		copyFileForUpdate(backupPath, execPath)
+		os.Remove(backupPath)
+		return fmt.Errorf("failed to replace executable: %w", err)
+	}
+
+	// Clean up backup
+	os.Remove(backupPath)
+	return nil
+}
+
+// getDownloadURL returns the download URL for the current platform
+func getDownloadURL(version string) string {
+	baseURL := "https://github.com/zwying0814/wordma-cli/releases/download/v" + version
+	
+	var filename string
+	switch runtime.GOOS {
+	case "windows":
+		filename = fmt.Sprintf("wordma-%s-%s.exe", runtime.GOOS, runtime.GOARCH)
+	case "linux", "darwin":
+		filename = fmt.Sprintf("wordma-%s-%s", runtime.GOOS, runtime.GOARCH)
+	default:
+		return ""
+	}
+	
+	return fmt.Sprintf("%s/%s", baseURL, filename)
+}
+
+// downloadFile downloads a file from URL and returns the temp file path
+func downloadFile(url string) (string, error) {
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+
+	resp, err := client.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("download failed with status %d", resp.StatusCode)
+	}
+
+	// Create temp file
+	tempFile, err := os.CreateTemp("", "wordma-update-*")
+	if err != nil {
+		return "", err
+	}
+	defer tempFile.Close()
+
+	// Copy response body to temp file
+	_, err = io.Copy(tempFile, resp.Body)
+	if err != nil {
+		os.Remove(tempFile.Name())
+		return "", err
+	}
+
+	return tempFile.Name(), nil
+}
+
+// copyFileForUpdate copies a file from src to dst
+func copyFileForUpdate(src, dst string) error {
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+
+	dstFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer dstFile.Close()
+
+	_, err = io.Copy(dstFile, srcFile)
+	return err
+}
+
+// replaceExecutable replaces the current executable with the new one
+func replaceExecutable(newPath, execPath string) error {
+	// On Windows, we might need to handle file locking differently
+	if runtime.GOOS == "windows" {
+		return replaceExecutableWindows(newPath, execPath)
+	}
+	return copyFileForUpdate(newPath, execPath)
+}
+
+// replaceExecutableWindows handles executable replacement on Windows
+func replaceExecutableWindows(newPath, execPath string) error {
+	// Try to copy directly first
+	if err := copyFileForUpdate(newPath, execPath); err == nil {
+		return nil
+	}
+
+	// If direct copy fails, try moving current exe and then copying
+	tempPath := execPath + ".old"
+	if err := os.Rename(execPath, tempPath); err != nil {
+		return err
+	}
+
+	if err := copyFileForUpdate(newPath, execPath); err != nil {
+		// Restore original if copy fails
+		os.Rename(tempPath, execPath)
+		return err
+	}
+
+	// Clean up old executable
+	os.Remove(tempPath)
+	return nil
 }
 
 func runUpdateTheme(cmd *cobra.Command, args []string) {

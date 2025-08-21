@@ -52,6 +52,30 @@ func PrintInfo(message string) {
 	blue.Printf("ℹ %s\n", message)
 }
 
+// ColorText 返回带颜色的文本
+func ColorText(text, colorName string) string {
+	var c *color.Color
+	switch colorName {
+	case "red":
+		c = color.New(color.FgRed)
+	case "green":
+		c = color.New(color.FgGreen)
+	case "yellow":
+		c = color.New(color.FgYellow)
+	case "blue":
+		c = color.New(color.FgBlue)
+	case "magenta":
+		c = color.New(color.FgMagenta)
+	case "cyan":
+		c = color.New(color.FgCyan)
+	case "white":
+		c = color.New(color.FgWhite)
+	default:
+		return text
+	}
+	return c.Sprint(text)
+}
+
 // RunCommand 执行命令
 func RunCommand(name string, args ...string) error {
 	cmd := exec.Command(name, args...)

@@ -5,7 +5,19 @@
 
 set -e
 
-VERSION=${1:-"dev"}
+VERSION=${1}
+if [ -z "$VERSION" ]; then
+    # Try to get version from git tag
+    VERSION=$(git describe --tags --exact-match HEAD 2>/dev/null || echo "")
+    if [ -z "$VERSION" ]; then
+        GIT_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+        if [ -z "$GIT_TAG" ]; then
+            VERSION="dev"
+        else
+            VERSION="${GIT_TAG}-dev"
+        fi
+    fi
+fi
 BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
